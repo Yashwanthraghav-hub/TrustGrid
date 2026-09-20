@@ -1,0 +1,2 @@
+export function configured(){return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL&&process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);}
+export function appOrigin(){const raw=process.env.APP_URL;if(!raw)throw new Error('APP_URL is not configured.');const u=new URL(raw);if(u.origin!==raw.replace(/\/$/,''))throw new Error('APP_URL must be an origin.');if(u.protocol!=='https:'&&u.hostname!=='localhost'&&u.hostname!=='127.0.0.1')throw new Error('HTTPS is required.');return u.origin;}

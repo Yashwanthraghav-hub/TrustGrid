@@ -1,0 +1,7 @@
+"use client";
+﻿import Link from "next/link";
+import {Settings2} from "lucide-react";
+import {usePreferences} from "@/components/ui/providers";
+import {Logo} from "@/components/ui/core";
+export function PublicHeader(){const {language,setLanguage,theme,setTheme}=usePreferences();return <header className="public-header"><Logo/><nav className="public-nav" aria-label="Public navigation"><Link className="desktop-link" href="/demo">Product demo</Link><Link className="desktop-link" href="/help">How it works</Link><Link className="public-signin" href="/login">Sign in</Link><details className="public-preferences"><summary className="button icon-button" aria-label="Language and appearance"><Settings2 size={17}/></summary><div className="panel preference-menu"><button onClick={()=>setLanguage(language==="en"?"ta":"en")}>{language==="en"?"????? ????":"English language"}</button><button onClick={()=>setTheme(theme==="light"?"dark":"light")}>{theme==="light"?"Dark appearance":"Light appearance"}</button></div></details><Link className="button primary" href="/register">Get started</Link></nav></header>}
+export function PublicFooter(){return <footer className="public-footer"><div><Logo/><p style={{marginTop:8}}>From crisis noise to coordinated action.</p></div><div className="footer-links"><Link href="/privacy">Privacy</Link><Link href="/help">Help & guidance</Link><Link href="/demo">Explore demo</Link></div></footer>}

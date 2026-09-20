@@ -1,0 +1,4 @@
+﻿import {notFound} from "next/navigation";
+import {requireSession} from "@/lib/auth/session";
+import {Workspace} from "@/components/layout/workspace";
+export default async function Dashboard({params,searchParams}:{params:Promise<{segments?:string[]}>;searchParams:Promise<Record<string,string|undefined>>}){const {segments=[]}=await params;const filters=await searchParams;const section=segments[0]||"dashboard";if(!['dashboard','requests','contributions','tasks','history','notifications','profile'].includes(section)||segments.length>2)notFound();const s=await requireSession();return <Workspace key={section+String(segments[1]||"")} initialSearch={filters.search} initialStatus={filters.status} initialPage={Math.max(1,Math.min(10000,Number(filters.page)||1))} org={s.organizationId} profile={s.profile||{}} role={s.role} section={section} id={segments[1]}/>}

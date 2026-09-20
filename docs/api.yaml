@@ -1,0 +1,81 @@
+openapi: 3.1.0
+info:
+  title: TrustGrid application API
+  version: 1.0.0
+  description: Organization-scoped API. Supabase session cookies authenticate requests; mutations require an Idempotency-Key header.
+servers:
+  - url: https://trustgrid-gamma.vercel.app/api/v1
+paths:
+  /session:
+    get:
+      summary: Return the authenticated profile, memberships, and selected organization context
+      responses:
+        '200': { description: Authorized session context }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /reports:
+    get:
+      summary: List reports visible to the current member and organization role
+      responses:
+        '200': { description: Paginated report list }
+    post:
+      summary: Persist a reviewed report draft
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody: { $ref: '#/components/requestBodies/Mutation' }
+      responses: { '200': { description: Created report }, '409': { $ref: '#/components/responses/Conflict' } }
+  /extract:
+    post:
+      summary: Extract a schema-validated report draft; preserves structured fallback when AI is unavailable
+      requestBody: { $ref: '#/components/requestBodies/Mutation' }
+      responses: { '200': { description: AI draft or explicit fallback status }, '429': { description: Durable rate limit exceeded } }
+  /offers:
+    get: { summary: List authorized resource offers, responses: { '200': { description: Offer list } } }
+    post:
+      summary: Create an offered supply record
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody: { $ref: '#/components/requestBodies/Mutation' }
+      responses: { '200': { description: Created offer } }
+  /needs:
+    get: { summary: List confirmed operational needs for coordinators, responses: { '200': { description: Need list } } }
+  /inventory:
+    get: { summary: Return confirmed lot balances and ledger-backed totals, responses: { '200': { description: Inventory balances } } }
+  /scenarios:
+    post:
+      summary: Save an allocation policy input and deterministic result
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody: { $ref: '#/components/requestBodies/Mutation' }
+      responses: { '200': { description: Saved scenario } }
+  /allocations:
+    post:
+      summary: Atomically reserve a current allocation scenario
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody: { $ref: '#/components/requestBodies/Mutation' }
+      responses: { '200': { description: Reservations committed }, '409': { $ref: '#/components/responses/Conflict' } }
+  /tasks:
+    get: { summary: List role-authorized delivery tasks, responses: { '200': { description: Task list } } }
+    post:
+      summary: Create or transition a task through an allowed custody action
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody: { $ref: '#/components/requestBodies/Mutation' }
+      responses: { '200': { description: Updated task }, '409': { $ref: '#/components/responses/Conflict' } }
+  /notifications:
+    get: { summary: List the current user's notifications, responses: { '200': { description: Notification list } } }
+  /audit:
+    get: { summary: List redacted organization audit events for admins, responses: { '200': { description: Audit event list }, '403': { description: Admin role required } } }
+components:
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 8, maxLength: 128 }
+  requestBodies:
+    Mutation:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+  responses:
+    Unauthorized: { description: Missing or expired Supabase session }
+    Conflict: { description: Stale version, changed idempotent payload, or unavailable stock/custody state }

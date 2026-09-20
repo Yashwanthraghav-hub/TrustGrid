@@ -1,0 +1,2 @@
+﻿import fs from 'node:fs';
+const p=JSON.parse(fs.readFileSync('package.json'));p.scripts.start='node --env-file-if-exists=.env.local scripts/start.mjs';fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');const c='next.config.ts';let s=fs.readFileSync(c,'utf8').replace("output: 'standalone',","output: 'standalone', outputFileTracingRoot: process.cwd(), turbopack: { root: process.cwd() },");fs.writeFileSync(c,s);

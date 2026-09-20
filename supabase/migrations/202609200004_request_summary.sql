@@ -1,0 +1,9 @@
+create or replace function public.tg_request_summary(p_org uuid,p_report uuid) returns jsonb language plpgsql stable security definer set search_path='' as $$declare nid uuid; summary jsonb;begin
+ if not private.can_report(p_org,p_report) then raise exception 'FORBIDDEN';end if;
+ select need_id into nid from public.need_report_links where report_id=p_report and organization_id=p_org limit 1;
+ if nid is null then return '{}'::jsonb;end if;
+ select jsonb_build_object('id',n.id,'sku',n.sku,'target_quantity',n.target_quantity,'external_received',n.external_received,'uncommitted',private.need_uncommitted(n.id),'received',coalesce((select sum(t.received) from public.delivery_tasks t join public.reservations r on r.id=t.reservation_id join public.allocations a on a.id=r.allocation_id where a.need_id=n.id),0),'reserved',coalesce((select sum(r.remaining) from public.reservations r join public.allocations a on a.id=r.allocation_id where a.need_id=n.id and r.state='active' and r.expires_at>now()),0),'in_transit',coalesce((select sum(t.picked_up-t.received-t.returned-t.lost) from public.delivery_tasks t join public.reservations r on r.id=t.reservation_id join public.allocations a on a.id=r.allocation_id where a.need_id=n.id),0)) into summary from public.needs n where id=nid;
+ return jsonb_build_object('need_summary',summary,'deliveries',(select coalesce(jsonb_agg(jsonb_build_object('id',t.id,'state',t.state,'quantity',t.quantity,'received',t.received,'updated_at',t.updated_at)),'[]') from public.delivery_tasks t join public.reservations r on r.id=t.reservation_id join public.allocations a on a.id=r.allocation_id where a.need_id=nid and private.can_task(p_org,t.id)));
+end$$;
+revoke all on function public.tg_request_summary(uuid,uuid) from public,anon;
+grant execute on function public.tg_request_summary(uuid,uuid) to authenticated;
